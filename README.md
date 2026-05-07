@@ -1,6 +1,6 @@
 functions made by me, has been an old project rotting in my drive so i decided to improve it.
 claude made the web ui version and refined the ui in the gui version + cleaned up the messy code that i made.
-
+GUI's ui may not be stable on windows as it was tested in archlinux with hyprland :)
 # 🛡️ Mullvad Guardian
 
 **Automated device monitoring and removal for Mullvad VPN accounts**
