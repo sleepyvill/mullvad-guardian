@@ -44,7 +44,7 @@ Mullvad Guardian monitors your Mullvad account for unauthorized devices and auto
 
 ---
 
-## 📸 Screenshots
+## 📸 UI
 
 ### GUI Mode
 Beautiful glassmorphic interface with real-time monitoring:
