@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Mullvad Guardian - Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #13131a;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Gradient Background */
+        .gradient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Particle Field */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(100px, -100px); }
+            50% { transform: translate(-50px, -150px); }
+            75% { transform: translate(150px, -50px); }
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 12px 48px rgba(99, 102, 241, 0.6); }
+        }
+
+        .logo-text h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 12px var(--accent-green);
+        }
+
+        .status-badge.disconnected {
+            animation: statusPulseRed 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulseRed {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+        }
+
+        .status-badge.disconnected .status-dot {
+            background: var(--accent-red);
+            box-shadow: 0 0 12px var(--accent-red);
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 12px;
+            padding: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            margin-bottom: 48px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 16px;
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Main Connection Card */
+        .connection-card {
+            text-align: center;
+            padding: 64px 32px;
+        }
+
+        .connection-circle {
+            width: 240px;
+            height: 240px;
+            margin: 0 auto 48px;
+            position: relative;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .connection-circle-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 3px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 0 60px rgba(99, 102, 241, 0.3);
+        }
+
+        .connection-circle-inner::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-green));
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: -1;
+        }
+
+        .connection-circle.connected .connection-circle-inner::before {
+            opacity: 1;
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .connection-icon {
+            font-size: 80px;
+            filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6));
+        }
+
+        .connection-title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .connection-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+        }
+
+        /* Button */
+        .btn {
+            padding: 18px 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .stat-card {
+            padding: 24px;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Server List */
+        .server-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .server-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px;
+            cursor: pointer;
+        }
+
+        .server-item:hover {
+            transform: translateX(8px);
+        }
+
+        .server-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .server-flag {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .server-details h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .server-details p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .server-stats {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .server-stat {
+            text-align: center;
+        }
+
+        .server-stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .server-stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Page Content */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background-color: var(--accent-primary);
+        }
+
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Server List */
+        .country-item {
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .country-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .country-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .country-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .country-flag {
+            font-size: 24px;
+        }
+
+        .country-details h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .country-details p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .country-servers {
+            display: none;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0 0 12px 12px;
+            margin-top: -8px;
+        }
+
+        .country-servers.expanded {
+            display: block;
+        }
+
+        .server-row {
+            padding: 12px;
+            margin: 4px 0;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .server-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .server-name {
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .server-connect-btn {
+            padding: 6px 16px;
+            background: var(--accent-primary);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .server-connect-btn:hover {
+            background: var(--accent-secondary);
+            transform: scale(1.05);
+        }
+
+        /* Whitelist Items */
+        .whitelist-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .whitelist-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .whitelist-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .whitelist-dot.manual {
+            background: var(--accent-green);
+        }
+
+        .whitelist-dot.auto {
+            background: var(--accent-primary);
+        }
+
+        .whitelist-badge {
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 8px;
+            color: var(--accent-primary);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .whitelist-remove-btn {
+            padding: 6px 16px;
+            background: var(--accent-red);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .whitelist-remove-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .nav {
+                flex-wrap: wrap;
+            }
+
+            .connection-circle {
+                width: 180px;
+                height: 180px;
+            }
+
+            .connection-icon {
+                font-size: 60px;
+            }
+
+            .connection-title {
+                font-size: 32px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .server-stats {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div class="logo-text">
+                    <h1>Mullvad Guardian</h1>
+                    <p>Premium Protection</p>
+                </div>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <div class="status-dot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </div>
+
+        
+        <div class="nav">
+            <button class="nav-btn active" data-page="home">
+                🏠 Home
+            </button>
+            <button class="nav-btn" data-page="connect">
+                📡 Connect
+            </button>
+            <button class="nav-btn" data-page="devices">
+                📱 Devices
+            </button>
+            <button class="nav-btn" data-page="whitelist">
+                ✅ Whitelist
+            </button>
+            <button class="nav-btn" data-page="settings">
+                ⚙️ Settings
+            </button>
+        </div>
+
+        
+        <div id="home" class="page active">
+            <div class="glass-card connection-card">
+                <div class="connection-circle" id="connectionCircle">
+                    <div class="connection-circle-inner">
+                        <div class="connection-icon">🔒</div>
+                    </div>
+                </div>
+                <h2 class="connection-title" id="connectionTitle">Not Protected</h2>
+                <p class="connection-subtitle" id="connectionSubtitle">Click connect to secure your connection</p>
+                <button class="btn" id="connectBtn">
+                    <span>⚡</span>
+                    <span id="btnText">Connect</span>
+                </button>
+            </div>
+
+            
+            <div class="glass-card" style="padding: 24px; margin-top: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Guardian Protection</h3>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Automatically removes unauthorized devices</p>
+                    </div>
+                    <button id="homeGuardianToggle" class="btn" style="padding: 12px 24px; font-size: 14px;">
+                        <span id="homeGuardianIcon">🛡️</span>
+                        <span id="homeGuardianText">Loading...</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid" style="display: none;">
+                <div class="glass-card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🔍</div>
+                        <div>
+                            <div class="stat-label">Scans</div>
+                            <div class="stat-value">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🗑️</div>
+                        <div>
+                            <div class="stat-label">Removed</div>
+                            <div class="stat-value">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">📅</div>
+                        <div>
+                            <div class="stat-label">Expiry</div>
+                            <div class="stat-value">Unknown</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🛡️</div>
+                        <div>
+                            <div class="stat-label">Guardian</div>
+                            <div class="stat-value">🔴 Stopped</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div id="connect" class="page">
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 32px;">Select Server</h2>
+
+            <div style="margin-bottom: 24px;">
+                <input type="text" id="serverSearch" placeholder="Search countries..." style="width: 100%; padding: 14px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 14px; outline: none;">
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                <button id="autoLocationBtn" class="btn" style="flex: 1;">🌍 Auto-Select Best Location</button>
+                <button id="pingAllBtn" class="btn" style="flex: 1; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.3);">📡 Ping All Servers</button>
+            </div>
+
+            <div id="serverList" style="max-height: 600px; overflow-y: auto;">
+                <p style="text-align: center; color: var(--text-secondary); padding: 40px;">Loading servers...</p>
+            </div>
+        </div>
+
+        
+        <div id="devices" class="page">
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 32px;">Connected Devices</h2>
+            <div class="server-list">
+                <div class="glass-card server-item">
+                    <div class="server-info">
+                        <div class="server-flag">📱</div>
+                        <div class="server-details">
+                            <h3>iPhone 14 Pro</h3>
+                            <p>iOS 17.2 • Active now</p>
+                        </div>
+                    </div>
+                    <div style="padding: 8px 16px; background: rgba(16, 185, 129, 0.2); border-radius: 12px; color: var(--accent-green); font-size: 13px; font-weight: 600;">Online</div>
+                </div>
+                <div class="glass-card server-item">
+                    <div class="server-info">
+                        <div class="server-flag">💻</div>
+                        <div class="server-details">
+                            <h3>MacBook Pro</h3>
+                            <p>macOS Sonoma • Active now</p>
+                        </div>
+                    </div>
+                    <div style="padding: 8px 16px; background: rgba(16, 185, 129, 0.2); border-radius: 12px; color: var(--accent-green); font-size: 13px; font-weight: 600;">Online</div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div id="whitelist" class="page">
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 16px;">Whitelist</h2>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 32px;">Devices with these exact names are protected from removal. Changes apply instantly.</p>
+
+            <div class="glass-card" style="padding: 32px; margin-bottom: 24px;">
+                <h3 style="font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 1.2px; margin-bottom: 16px;">MANUALLY ADDED</h3>
+                <div id="whitelistManual" style="display: flex; flex-direction: column; gap: 12px;">
+                    <p style="color: rgba(255,255,255,0.3); font-size: 13px;">No manual entries</p>
+                </div>
+
+                <h3 style="font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 1.2px; margin: 32px 0 16px 0;">AUTOMATICALLY ADDED</h3>
+                <div id="whitelistAuto" style="display: flex; flex-direction: column; gap: 12px;">
+                    <p style="color: rgba(255,255,255,0.3); font-size: 13px;">Detecting current device...</p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <input type="text" id="whitelistInput" placeholder="Device name to allow..." style="flex: 1; padding: 14px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 14px; outline: none;">
+                <button id="whitelistAddBtn" class="btn" style="padding: 14px 32px;">Add</button>
+            </div>
+        </div>
+
+        
+        <div id="settings" class="page">
+            <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 32px;">Settings</h2>
+
+            
+            <div class="glass-card" style="padding: 32px; margin-bottom: 24px;">
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 24px;">Guardian Settings</h3>
+
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Account Number</label>
+                    <input type="text" id="accountInput" placeholder="Enter Mullvad account number" style="width: 100%; padding: 14px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 14px; outline: none;">
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Discord Webhook URL</label>
+                    <input type="text" id="webhookInput" placeholder="https://discord.com/api/webhooks/..." style="width: 100%; padding: 14px 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 14px; outline: none;">
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Check Interval: <span id="intervalValue">3</span> seconds</label>
+                    <input type="range" id="intervalSlider" min="1" max="60" value="3" style="width: 100%;">
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button id="saveSettingsBtn" class="btn" style="flex: 1;">Save Settings</button>
+                    <button id="guardianToggleBtn" class="btn" style="flex: 1; background: var(--accent-red);">Stop Guardian</button>
+                </div>
+            </div>
+
+            
+            <div class="glass-card" style="padding: 32px;">
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 24px;">VPN Settings</h3>
+
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--glass-border);">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Protocol</h3>
+                            <p style="font-size: 14px; color: var(--text-secondary);">WireGuard (Recommended)</p>
+                        </div>
+                        <select id="protocolSelect" style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 14px;">
+                            <option value="wireguard">WireGuard</option>
+                            <option value="openvpn">OpenVPN</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--glass-border);">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Kill Switch</h3>
+                            <p style="font-size: 14px; color: var(--text-secondary);">Block internet if VPN disconnects</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="killswitchToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--glass-border);">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Block Ads & Malware</h3>
+                            <p style="font-size: 14px; color: var(--text-secondary);">DNS-level blocking</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="blockadsToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--glass-border);">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Auto-Reconnect</h3>
+                            <p style="font-size: 14px; color: var(--text-secondary);">Reconnect if device is removed</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="autoreconnectToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0;">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Persistent Connect</h3>
+                            <p style="font-size: 14px; color: var(--text-secondary);">Maintain VPN connection</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="persistentToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const pages = document.querySelectorAll('.page');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = btn.dataset.page;
+                
+                navBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                pages.forEach(p => p.classList.remove('active'));
+                document.getElementById(page).classList.add('active');
+            });
+        });
+
+        
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch status:', error);
+                return null;
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/stats');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+                return null;
+            }
+        }
+
+        async function fetchDevices() {
+            try {
+                const response = await fetch('/api/devices');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch devices:', error);
+                return null;
+            }
+        }
+
+        async function connectVPN() {
+            try {
+                const response = await fetch('/api/connect', { method: 'POST' });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to connect:', error);
+                return { success: false };
+            }
+        }
+
+        async function disconnectVPN() {
+            try {
+                const response = await fetch('/api/disconnect', { method: 'POST' });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to disconnect:', error);
+                return { success: false };
+            }
+        }
+
+        async function startGuardian() {
+            try {
+                const response = await fetch('/api/guardian/start', { method: 'POST' });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to start guardian:', error);
+                return { success: false };
+            }
+        }
+
+        async function stopGuardian() {
+            try {
+                const response = await fetch('/api/guardian/stop', { method: 'POST' });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to stop guardian:', error);
+                return { success: false };
+            }
+        }
+
+        
+        const connectBtn = document.getElementById('connectBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const connectionTitle = document.getElementById('connectionTitle');
+        const connectionSubtitle = document.getElementById('connectionSubtitle');
+        const connectionCircle = document.getElementById('connectionCircle');
+        const btnText = document.getElementById('btnText');
+        const statsGrid = document.getElementById('statsGrid');
+
+        
+        function updateUI(status, stats) {
+            if (!status) return;
+
+            const isConnected = status.state === 'connected';
+
+            if (isConnected) {
+                statusBadge.classList.remove('disconnected');
+                statusText.textContent = 'Connected';
+                connectionTitle.textContent = 'Protected';
+                connectionSubtitle.textContent = status.location || 'Connected';
+                connectionCircle.classList.add('connected');
+                btnText.textContent = 'Disconnect';
+                statsGrid.style.display = 'grid';
+            } else {
+                statusBadge.classList.add('disconnected');
+                statusText.textContent = status.state === 'connecting' ? 'Connecting...' : 'Disconnected';
+                connectionTitle.textContent = 'Not Protected';
+                connectionSubtitle.textContent = 'Click connect to secure your connection';
+                connectionCircle.classList.remove('connected');
+                btnText.textContent = 'Connect';
+                statsGrid.style.display = 'none';
+            }
+
+            
+            if (stats) {
+                const statCards = statsGrid.querySelectorAll('.glass-card');
+                if (statCards[0]) {
+                    statCards[0].querySelector('.stat-value').textContent = stats.scan_count || 0;
+                }
+                if (statCards[1]) {
+                    statCards[1].querySelector('.stat-value').textContent = stats.total_removed || 0;
+                }
+                if (statCards[2]) {
+                    statCards[2].querySelector('.stat-value').textContent = stats.expiry || 'Unknown';
+                }
+                if (statCards[3]) {
+                    const guardianStatus = stats.status === 'running' ? '🟢 Active' : '🔴 Stopped';
+                    statCards[3].querySelector('.stat-value').textContent = guardianStatus;
+                }
+
+                
+                updateHomeGuardianButton(stats.status === 'running');
+            }
+        }
+
+        
+        function updateHomeGuardianButton(isRunning) {
+            const btn = document.getElementById('homeGuardianToggle');
+            const icon = document.getElementById('homeGuardianIcon');
+            const text = document.getElementById('homeGuardianText');
+
+            if (isRunning) {
+                btn.style.background = 'var(--accent-red)';
+                icon.textContent = '🛑';
+                text.textContent = 'Stop Guardian';
+            } else {
+                btn.style.background = 'var(--accent-green)';
+                icon.textContent = '🛡️';
+                text.textContent = 'Start Guardian';
+            }
+        }
+
+        
+        async function updateDevicesList() {
+            const devicesData = await fetchDevices();
+            if (!devicesData || !devicesData.devices) return;
+
+            const devicesPage = document.getElementById('devices');
+            const serverList = devicesPage.querySelector('.server-list');
+            serverList.innerHTML = '';
+
+            if (devicesData.devices.length === 0) {
+                serverList.innerHTML = '<div class="glass-card" style="padding: 32px; text-align: center;"><p style="color: var(--text-secondary);">No devices found. Start Guardian to monitor devices.</p></div>';
+                return;
+            }
+
+            devicesData.devices.forEach(device => {
+                const deviceCard = document.createElement('div');
+                deviceCard.className = 'glass-card server-item';
+                deviceCard.innerHTML = `
+                    <div class="server-info">
+                        <div class="server-flag">${device.whitelisted ? '✅' : '⚠️'}</div>
+                        <div class="server-details">
+                            <h3>${device.name}</h3>
+                            <p>${device.whitelisted ? 'Whitelisted' : 'Not whitelisted'}</p>
+                        </div>
+                    </div>
+                    <div style="padding: 8px 16px; background: ${device.whitelisted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; border-radius: 12px; color: ${device.whitelisted ? 'var(--accent-green)' : 'var(--accent-red)'}; font-size: 13px; font-weight: 600;">
+                        ${device.whitelisted ? 'Protected' : 'Unprotected'}
+                    </div>
+                `;
+                serverList.appendChild(deviceCard);
+            });
+        }
+
+        
+        connectBtn.addEventListener('click', async () => {
+            const status = await fetchStatus();
+            if (!status) return;
+
+            connectBtn.disabled = true;
+            btnText.textContent = 'Processing...';
+
+            if (status.state === 'connected') {
+                await disconnectVPN();
+            } else {
+                await connectVPN();
+            }
+
+            
+            setTimeout(async () => {
+                const newStatus = await fetchStatus();
+                const stats = await fetchStats();
+                updateUI(newStatus, stats);
+                connectBtn.disabled = false;
+            }, 2000);
+        });
+
+        
+        async function refresh() {
+            const status = await fetchStatus();
+            const stats = await fetchStats();
+            updateUI(status, stats);
+
+            
+            const devicesPage = document.getElementById('devices');
+            if (devicesPage.classList.contains('active')) {
+                await updateDevicesList();
+            }
+        }
+
+        
+        refresh();
+
+        
+        startGuardian();
+
+        
+        setInterval(refresh, 3000);
+
+        
+        navBtns.forEach(btn => {
+            const originalClick = btn.onclick;
+            btn.addEventListener('click', async () => {
+                if (btn.dataset.page === 'devices') {
+                    await updateDevicesList();
+                } else if (btn.dataset.page === 'whitelist') {
+                    await updateWhitelistPage();
+                } else if (btn.dataset.page === 'connect') {
+                    await loadServers();
+                } else if (btn.dataset.page === 'settings') {
+                    await loadSettings();
+                }
+            });
+        });
+
+        
+        let currentConfig = {};
+
+        async function fetchConfig() {
+            try {
+                const response = await fetch('/api/config');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch config:', error);
+                return null;
+            }
+        }
+
+        async function updateWhitelistPage() {
+            const config = await fetchConfig();
+            const stats = await fetchStats();
+            if (!config) return;
+
+            currentConfig = config;
+
+            
+            const manualDiv = document.getElementById('whitelistManual');
+            const whitelist = config.whitelist || [];
+
+            if (whitelist.length === 0 || (whitelist.length === 1 && whitelist[0] === '')) {
+                manualDiv.innerHTML = '<p style="color: rgba(255,255,255,0.3); font-size: 13px;">No manual entries</p>';
+            } else {
+                manualDiv.innerHTML = whitelist.filter(n => n).map(name => `
+                    <div class="whitelist-item">
+                        <div class="whitelist-item-info">
+                            <div class="whitelist-dot manual"></div>
+                            <span style="font-size: 14px;">${name}</span>
+                        </div>
+                        <button class="whitelist-remove-btn" onclick="removeFromWhitelist('${name}')">Remove</button>
+                    </div>
+                `).join('');
+            }
+
+            
+            const autoDiv = document.getElementById('whitelistAuto');
+            const myDevice = stats?.my_device;
+
+            if (myDevice) {
+                autoDiv.innerHTML = `
+                    <div class="whitelist-item">
+                        <div class="whitelist-item-info">
+                            <div class="whitelist-dot auto"></div>
+                            <span style="font-size: 14px;">${myDevice}</span>
+                        </div>
+                        <span class="whitelist-badge">auto</span>
+                    </div>
+                `;
+            } else {
+                autoDiv.innerHTML = '<p style="color: rgba(255,255,255,0.3); font-size: 13px;">Detecting current device...</p>';
+            }
+        }
+
+        async function addToWhitelist(deviceName) {
+            try {
+                const response = await fetch('/api/whitelist/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_name: deviceName })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await updateWhitelistPage();
+                }
+                return result;
+            } catch (error) {
+                console.error('Failed to add to whitelist:', error);
+                return { success: false };
+            }
+        }
+
+        async function removeFromWhitelist(deviceName) {
+            try {
+                const response = await fetch('/api/whitelist/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_name: deviceName })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await updateWhitelistPage();
+                }
+                return result;
+            } catch (error) {
+                console.error('Failed to remove from whitelist:', error);
+                return { success: false };
+            }
+        }
+
+        
+        document.getElementById('whitelistAddBtn').addEventListener('click', async () => {
+            const input = document.getElementById('whitelistInput');
+            const deviceName = input.value.trim();
+            if (deviceName) {
+                await addToWhitelist(deviceName);
+                input.value = '';
+            }
+        });
+
+        
+        document.getElementById('whitelistInput').addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                const deviceName = e.target.value.trim();
+                if (deviceName) {
+                    await addToWhitelist(deviceName);
+                    e.target.value = '';
+                }
+            }
+        });
+
+        
+        window.removeFromWhitelist = removeFromWhitelist;
+
+        
+        let allCountries = [];
+
+        function getCountryFlag(code) {
+            if (!code || code.length !== 2) return '🌐';
+            const codePoints = code.toUpperCase().split('').map(char =>
+                0x1F1E6 + char.charCodeAt(0) - 'A'.charCodeAt(0)
+            );
+            return String.fromCodePoint(...codePoints);
+        }
+
+        async function loadServers() {
+            const serverList = document.getElementById('serverList');
+            serverList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Loading servers...</p>';
+
+            try {
+                const response = await fetch('/api/relays');
+                const data = await response.json();
+                allCountries = data.countries || [];
+
+                if (allCountries.length === 0) {
+                    serverList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">No servers available</p>';
+                    return;
+                }
+
+                renderServers(allCountries);
+            } catch (error) {
+                console.error('Failed to load servers:', error);
+                serverList.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 40px;">Failed to load servers</p>';
+            }
+        }
+
+        function renderServers(countries) {
+            const serverList = document.getElementById('serverList');
+            serverList.innerHTML = countries.map(country => `
+                <div class="country-item">
+                    <div class="country-header" onclick="toggleCountry('${country.code}')">
+                        <div class="country-info">
+                            <div class="country-flag">${getCountryFlag(country.code)}</div>
+                            <div class="country-details">
+                                <h3>${country.name}</h3>
+                                <p>${country.city_count} cities • ${country.servers.length} servers</p>
+                            </div>
+                        </div>
+                        <button class="server-connect-btn" onclick="event.stopPropagation(); connectToCountry('${country.code}')">Connect</button>
+                    </div>
+                    <div class="country-servers" id="servers-${country.code}">
+                        ${country.servers.map(server => `
+                            <div class="server-row">
+                                <div>
+                                    <div class="server-name">${server.hostname}</div>
+                                    <div style="font-size: 11px; color: var(--text-secondary);">${server.city} • ${server.ipv4}</div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span id="ping-${server.hostname}" style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">—</span>
+                                    <button class="server-connect-btn" onclick="connectToServer('${server.hostname}')">Connect</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleCountry(code) {
+            const serversDiv = document.getElementById(`servers-${code}`);
+            if (serversDiv) {
+                serversDiv.classList.toggle('expanded');
+            }
+        }
+
+        async function connectToServer(hostname) {
+            try {
+                const response = await fetch('/api/relay/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'hostname', value: hostname })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await connectVPN();
+                }
+            } catch (error) {
+                console.error('Failed to set server:', error);
+            }
+        }
+
+        async function connectToCountry(code) {
+            try {
+                const response = await fetch('/api/relay/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'country', value: code })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await connectVPN();
+                }
+            } catch (error) {
+                console.error('Failed to set country:', error);
+            }
+        }
+
+        
+        document.getElementById('autoLocationBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/relay/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'auto' })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    await connectVPN();
+                }
+            } catch (error) {
+                console.error('Failed to set auto location:', error);
+            }
+        });
+
+        
+        document.getElementById('serverSearch').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (!query) {
+                renderServers(allCountries);
+                return;
+            }
+            const filtered = allCountries.filter(c =>
+                c.name.toLowerCase().includes(query) ||
+                c.code.toLowerCase().includes(query)
+            );
+            renderServers(filtered);
+        });
+
+        
+        let isPinging = false;
+
+        async function pingServer(hostname, ipv4) {
+            const startTime = performance.now();
+            try {
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                await fetch(`http:
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                const endTime = performance.now();
+                return Math.round(endTime - startTime);
+            } catch (error) {
+                
+                const endTime = performance.now();
+                const elapsed = Math.round(endTime - startTime);
+                return elapsed < 5000 ? elapsed : null;
+            }
+        }
+
+        async function pingAllServers() {
+            if (isPinging) return;
+
+            isPinging = true;
+            const pingBtn = document.getElementById('pingAllBtn');
+            pingBtn.textContent = '⏳ Pinging...';
+            pingBtn.disabled = true;
+
+            
+            const allServers = [];
+            allCountries.forEach(country => {
+                country.servers.forEach(server => {
+                    allServers.push(server);
+                });
+            });
+
+            
+            const batchSize = 10;
+            for (let i = 0; i < allServers.length; i += batchSize) {
+                const batch = allServers.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (server) => {
+                    const ping = await pingServer(server.hostname, server.ipv4);
+                    const pingElement = document.getElementById(`ping-${server.hostname}`);
+                    if (pingElement) {
+                        if (ping !== null) {
+                            pingElement.textContent = `${ping}ms`;
+                            pingElement.style.color = ping < 50 ? 'var(--accent-green)' :
+                                                      ping < 100 ? 'var(--accent-primary)' :
+                                                      'var(--accent-red)';
+                        } else {
+                            pingElement.textContent = 'timeout';
+                            pingElement.style.color = 'var(--accent-red)';
+                        }
+                    }
+                }));
+
+                
+                const progress = Math.round((i + batchSize) / allServers.length * 100);
+                pingBtn.textContent = `⏳ Pinging... ${Math.min(progress, 100)}%`;
+            }
+
+            pingBtn.textContent = '📡 Ping All Servers';
+            pingBtn.disabled = false;
+            isPinging = false;
+        }
+
+        document.getElementById('pingAllBtn').addEventListener('click', pingAllServers);
+
+        
+        window.toggleCountry = toggleCountry;
+        window.connectToServer = connectToServer;
+        window.connectToCountry = connectToCountry;
+
+        
+        async function loadSettings() {
+            const config = await fetchConfig();
+            if (!config) return;
+
+            
+            document.getElementById('accountInput').value = config.account_num || '';
+            document.getElementById('webhookInput').value = config.discord_webhook || '';
+            document.getElementById('intervalSlider').value = config.check_interval || 3;
+            document.getElementById('intervalValue').textContent = config.check_interval || 3;
+
+            
+            document.getElementById('protocolSelect').value = config.vpn_protocol || 'wireguard';
+            document.getElementById('killswitchToggle').checked = config.vpn_kill_switch || false;
+            document.getElementById('blockadsToggle').checked = config.vpn_block_ads || false;
+            document.getElementById('autoreconnectToggle').checked = config.auto_reconnect !== false;
+            document.getElementById('persistentToggle').checked = config.persistent_connect !== false;
+
+            
+            const stats = await fetchStats();
+            const guardianBtn = document.getElementById('guardianToggleBtn');
+            if (stats && stats.status === 'running') {
+                guardianBtn.textContent = 'Stop Guardian';
+                guardianBtn.style.background = 'var(--accent-red)';
+            } else {
+                guardianBtn.textContent = 'Start Guardian';
+                guardianBtn.style.background = 'var(--accent-green)';
+            }
+        }
+
+        
+        document.getElementById('intervalSlider').addEventListener('input', (e) => {
+            document.getElementById('intervalValue').textContent = e.target.value;
+        });
+
+        
+        document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+            const config = {
+                account_num: document.getElementById('accountInput').value,
+                discord_webhook: document.getElementById('webhookInput').value,
+                check_interval: parseInt(document.getElementById('intervalSlider').value),
+                auto_reconnect: document.getElementById('autoreconnectToggle').checked,
+                persistent_connect: document.getElementById('persistentToggle').checked
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Settings saved successfully!');
+                }
+            } catch (error) {
+                console.error('Failed to save settings:', error);
+                alert('Failed to save settings');
+            }
+        });
+
+        
+        document.getElementById('guardianToggleBtn').addEventListener('click', async () => {
+            const stats = await fetchStats();
+            const btn = document.getElementById('guardianToggleBtn');
+
+            if (stats && stats.status === 'running') {
+                await stopGuardian();
+                btn.textContent = 'Start Guardian';
+                btn.style.background = 'var(--accent-green)';
+            } else {
+                await startGuardian();
+                btn.textContent = 'Stop Guardian';
+                btn.style.background = 'var(--accent-red)';
+            }
+        });
+
+        
+        document.getElementById('homeGuardianToggle').addEventListener('click', async () => {
+            const stats = await fetchStats();
+            const isRunning = stats && stats.status === 'running';
+
+            if (isRunning) {
+                await stopGuardian();
+                updateHomeGuardianButton(false);
+            } else {
+                await startGuardian();
+                updateHomeGuardianButton(true);
+            }
+
+            
+            setTimeout(async () => {
+                const status = await fetchStatus();
+                const newStats = await fetchStats();
+                updateUI(status, newStats);
+            }, 500);
+        });
+
+        
+        document.getElementById('protocolSelect').addEventListener('change', async (e) => {
+            try {
+                await fetch('/api/vpn/protocol', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ protocol: e.target.value })
+                });
+            } catch (error) {
+                console.error('Failed to set protocol:', error);
+            }
+        });
+
+        document.getElementById('killswitchToggle').addEventListener('change', async (e) => {
+            try {
+                await fetch('/api/vpn/killswitch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: e.target.checked })
+                });
+            } catch (error) {
+                console.error('Failed to set kill switch:', error);
+            }
+        });
+
+        document.getElementById('blockadsToggle').addEventListener('change', async (e) => {
+            try {
+                await fetch('/api/vpn/blockads', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: e.target.checked })
+                });
+            } catch (error) {
+                console.error('Failed to set ad blocking:', error);
+            }
+        });
+    </script>
+</body>
+</html>
