@@ -1495,11 +1495,10 @@
         async function pingServer(hostname, ipv4) {
             const startTime = performance.now();
             try {
-                
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-                await fetch(`http:
+                await fetch(`http://${ipv4}:80`, {
                     method: 'HEAD',
                     mode: 'no-cors',
                     signal: controller.signal
@@ -1509,7 +1508,6 @@
                 const endTime = performance.now();
                 return Math.round(endTime - startTime);
             } catch (error) {
-                
                 const endTime = performance.now();
                 const elapsed = Math.round(endTime - startTime);
                 return elapsed < 5000 ? elapsed : null;
