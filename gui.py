@@ -788,11 +788,32 @@ class GuardianWorker(QThread):
                 names_lower = {d.name.lower().strip() for d in devices}
                 if self._my_device.lower().strip() not in names_lower:
                     self._log.warning(
-                        "Own device '%s' was removed from account — re-registering…",
+                        "Own device '%s' was removed from account — checking current state…",
                         self._my_device,
                     )
                     self.self_removed.emit()
-                    if self._auto_reconnect and MullvadCLI.available():
+
+                    # Before forcing a re-login, check if user already logged in manually
+                    # under a different device name — if so, adopt it and protect it.
+                    current_device = MullvadCLI.detect_my_device()
+                    if current_device and current_device.lower().strip() in names_lower:
+                        self._log.info(
+                            "Already logged in as '%s' — adopting as protected device.",
+                            current_device,
+                        )
+                        self._my_device      = current_device
+                        self._self_detected  = True
+                        self._auto_whitelist = {current_device.lower().strip()}
+                        self.self_detected.emit(current_device)
+                        if self._auto_reconnect and MullvadCLI.available():
+                            state = MullvadCLI.status().get("state", "disconnected")
+                            if state not in ("connected", "connecting"):
+                                self._log.info("Connecting VPN for adopted device…")
+                                if MullvadCLI.connect():
+                                    self._log.info("Connected successfully.")
+                                else:
+                                    self._log.warning("Connection failed — will retry next cycle.")
+                    elif self._auto_reconnect and MullvadCLI.available():
                         reconnected = False
 
                         self._log.info("Disconnecting VPN to allow login…")
@@ -820,6 +841,10 @@ class GuardianWorker(QThread):
                             self._log.info("Reconnected successfully.")
                         else:
                             self._log.error("Reconnect failed — will retry next cycle.")
+                        self._self_detected  = False
+                        self._my_device      = None
+                        self._auto_whitelist = set()
+                    else:
                         self._self_detected  = False
                         self._my_device      = None
                         self._auto_whitelist = set()

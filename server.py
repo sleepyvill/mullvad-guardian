@@ -1,4 +1,5 @@
 
+import asyncio
 import json
 import subprocess
 import platform
@@ -7,7 +8,7 @@ import shutil
 import socket
 import logging
 from pathlib import Path
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -45,6 +46,50 @@ class _Device:
 
 class AuthenticationError(Exception):
     pass
+
+
+async def _ping_ip(ip: str, timeout: int = 2):
+    if _IS_WINDOWS:
+        cmd = ["ping", "-n", "1", "-w", str(timeout * 1000), ip]
+    elif platform.system() == "Darwin":
+        cmd = ["ping", "-c", "1", "-t", str(timeout), ip]
+    else:
+        cmd = ["ping", "-c", "1", "-W", str(timeout), ip]
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        try:
+            out, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout + 1)
+        except asyncio.TimeoutError:
+            try:
+                proc.kill()
+                await proc.wait()
+            except Exception:
+                pass
+            return None
+        if proc.returncode == 0:
+            m = re.search(r"time[=<]([\d.]+)\s*ms", out.decode("utf-8", "ignore"))
+            if m:
+                return round(float(m.group(1)), 2)
+    except Exception:
+        pass
+    return None
+
+
+async def _ping_batch_async(servers: list, concurrency: int = 100) -> dict:
+    sem = asyncio.Semaphore(concurrency)
+    results = {}
+
+    async def _one(hostname, ip):
+        async with sem:
+            results[hostname] = await _ping_ip(ip)
+
+    await asyncio.gather(*[_one(s["hostname"], s["ip"]) for s in servers])
+    return results
+
 
 def load_config():
     if _CFG_PATH.exists():
@@ -145,7 +190,7 @@ class MullvadCLI:
     def relogin(cls, account_num):
         cls._run("account", "logout")
         time.sleep(1)
-        out, err, rc = cls._run("account", "login", account_num)
+        _, _, rc = cls._run("account", "login", account_num, timeout=15)
         return rc == 0
 
     @classmethod
@@ -246,13 +291,15 @@ class GuardianWorker(threading.Thread):
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
             "Accept-Language": "en-US,en;q=0.9",
         })
+        self._lock = threading.Lock()
 
     def _log(self, level, msg):
         timestamp = datetime.now().strftime("%H:%M:%S")
-        log_entry = {"time": timestamp, "level": level, "message": msg}
-        self._logs.append(log_entry)
-        if len(self._logs) > 100:
-            self._logs.pop(0)
+        entry = {"time": timestamp, "level": level, "message": msg}
+        with self._lock:
+            self._logs.append(entry)
+            if len(self._logs) > 200:
+                self._logs.pop(0)
         print(f"[{timestamp}] {level}: {msg}")
 
     def update_whitelist(self, names):
@@ -265,13 +312,15 @@ class GuardianWorker(threading.Thread):
         self._discord = url
 
     def get_stats(self):
+        with self._lock:
+            logs = list(self._logs[-50:])
         return {
             "scan_count": self._scan_count,
             "total_removed": self._total_removed,
             "expiry": self._expiry,
             "status": self._status,
             "my_device": self._my_device,
-            "logs": self._logs[-20:],
+            "logs": logs,
         }
 
     def get_devices(self):
@@ -332,6 +381,26 @@ class GuardianWorker(threading.Thread):
             return self._login()
         return True
 
+    def _check_login_status(self):
+        if not MullvadCLI.available():
+            return
+        if MullvadCLI.is_logged_in():
+            return
+        self._log("WARNING", "Not logged in to Mullvad — re-logging in...")
+        if MullvadCLI.relogin(self._account_num):
+            self._log("INFO", "Re-login successful.")
+            self._self_detected = False
+            self._my_device = None
+            self._auto_whitelist = set()
+            self._session_active = False
+            if self._persistent_connect:
+                if MullvadCLI.connect():
+                    self._log("INFO", "Reconnected after re-login.")
+                else:
+                    self._log("WARNING", "Reconnect after re-login failed — will retry.")
+        else:
+            self._log("ERROR", "Re-login failed.")
+
     def _ensure_connected(self):
         if not self._persistent_connect or not MullvadCLI.available():
             return
@@ -352,6 +421,9 @@ class GuardianWorker(threading.Thread):
                 self._log("ERROR", "Login failed")
                 return
             self._session_active = False
+            self._self_detected = False
+            self._my_device = None
+            self._auto_whitelist = set()
 
         if MullvadCLI.connect():
             self._log("INFO", "Connected successfully")
@@ -467,6 +539,7 @@ class GuardianWorker(threading.Thread):
         self._log("INFO", "Guardian active - monitoring devices...")
 
         while self._active:
+            self._check_login_status()
             self._ensure_connected()
 
             if not self._ensure_session():
@@ -490,26 +563,45 @@ class GuardianWorker(threading.Thread):
             if self._my_device:
                 names_lower = {d.name.lower().strip() for d in devices}
                 if self._my_device.lower().strip() not in names_lower:
-                    self._log("WARNING", f"Own device '{self._my_device}' was removed from account - re-registering...")
-                    if self._auto_reconnect and MullvadCLI.available():
-                        self._log("INFO", "Disconnecting VPN to allow login...")
-                        MullvadCLI.disconnect()
-                        time.sleep(2)
+                    self._log("WARNING", f"Own device '{self._my_device}' was removed — re-logging in...")
 
-                        self._log("INFO", "Device removed - forcing logout to clear revoked device...")
+                    # Check if user already logged in manually under a new device name.
+                    current_device = MullvadCLI.detect_my_device()
+                    if current_device and current_device.lower().strip() in names_lower:
+                        self._log("INFO", f"Already logged in as '{current_device}' — adopting as protected device.")
+                        self._my_device = current_device
+                        self._self_detected = True
+                        self._auto_whitelist = {current_device.lower().strip()}
+                        if self._persistent_connect:
+                            state = MullvadCLI.status().get("state", "disconnected")
+                            if state not in ("connected", "connecting"):
+                                self._log("INFO", "Connecting VPN for adopted device...")
+                                if MullvadCLI.connect():
+                                    self._log("INFO", "Connected successfully.")
+                                else:
+                                    self._log("WARNING", "Connection failed — will retry next cycle.")
+                    elif MullvadCLI.available():
+                        if self._persistent_connect:
+                            MullvadCLI.disconnect()
+                            time.sleep(2)
                         MullvadCLI._run("account", "logout")
                         time.sleep(1)
 
                         self._log("INFO", "Logging in to create new device...")
                         if MullvadCLI.relogin(self._account_num):
-                            self._log("INFO", "Re-login successful - attempting connection...")
-                            if MullvadCLI.connect():
-                                self._log("INFO", "Connection successful")
-                            else:
-                                self._log("WARNING", "Connection failed - will retry next cycle")
+                            self._log("INFO", "Re-login successful.")
+                            if self._persistent_connect:
+                                if MullvadCLI.connect():
+                                    self._log("INFO", "Connection successful.")
+                                else:
+                                    self._log("WARNING", "Connection failed — will retry next cycle.")
                         else:
-                            self._log("ERROR", "Re-login failed - will retry next cycle")
+                            self._log("ERROR", "Re-login failed — will retry next cycle.")
 
+                        self._self_detected = False
+                        self._my_device = None
+                        self._auto_whitelist = set()
+                    else:
                         self._self_detected = False
                         self._my_device = None
                         self._auto_whitelist = set()
@@ -656,6 +748,41 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"countries": result})
             except Exception as e:
                 self._send_json({"countries": [], "error": str(e)})
+
+        elif path == "/api/ping":
+            ip = parse_qs(parsed.query).get("ip", [""])[0]
+            if not ip:
+                self._send_json({"success": False, "error": "No IP provided"})
+                return
+
+            try:
+                if _IS_WINDOWS:
+                    cmd = ["ping", "-n", "1", "-w", "2000", ip]
+                elif platform.system() == "Darwin":
+                    cmd = ["ping", "-c", "1", "-t", "2", ip]
+                else:
+                    cmd = ["ping", "-c", "1", "-W", "2", ip]
+
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=3
+                )
+
+                if result.returncode == 0:
+                    match = re.search(r"time[=<]([\d.]+)\s*ms", result.stdout)
+                    if match:
+                        ping_ms = float(match.group(1))
+                        self._send_json({"success": True, "ping": ping_ms})
+                    else:
+                        self._send_json({"success": False, "ping": None})
+                else:
+                    self._send_json({"success": False, "ping": None})
+            except subprocess.TimeoutExpired:
+                self._send_json({"success": False, "ping": None})
+            except Exception as e:
+                self._send_json({"success": False, "error": str(e), "ping": None})
 
         else:
             self.send_response(404)
@@ -805,6 +932,21 @@ class RequestHandler(BaseHTTPRequestHandler):
                 save_config(config)
             self._send_json({"success": success})
 
+        elif path == "/api/ping-batch":
+            servers = data.get("servers", [])
+            if not servers:
+                self._send_json({"results": {}})
+                return
+            try:
+                loop = asyncio.new_event_loop()
+                try:
+                    results = loop.run_until_complete(_ping_batch_async(servers))
+                finally:
+                    loop.close()
+                self._send_json({"results": results})
+            except Exception as e:
+                self._send_json({"results": {}, "error": str(e)})
+
         else:
             self.send_response(404)
             self.end_headers()
@@ -833,7 +975,7 @@ def run_server(port=1367):
         _guardian_worker.start()
         print("🛡️  Guardian auto-started")
 
-    server = HTTPServer(("0.0.0.0", port), RequestHandler)
+    server = ThreadingHTTPServer(("0.0.0.0", port), RequestHandler)
     print(f"🛡️  Mullvad Guardian Web UI")
     print(f"📡 Server running on http://localhost:{port}")
     print(f"Press Ctrl+C to stop")

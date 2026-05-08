@@ -85,7 +85,8 @@
             padding: 32px;
             position: relative;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+            will-change: transform;
         }
 
         .glass-card::before {
@@ -97,8 +98,8 @@
         }
 
         .glass-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 18px 52px rgba(99, 102, 241, 0.22);
             border-color: rgba(99, 102, 241, 0.3);
         }
 
@@ -249,48 +250,8 @@
             height: 240px;
             margin: 0 auto 48px;
             position: relative;
-            animation: rotate 20s linear infinite;
         }
 
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .connection-circle-inner {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 3px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 0 60px rgba(99, 102, 241, 0.3);
-        }
-
-        .connection-circle-inner::before {
-            content: '';
-            position: absolute;
-            inset: -3px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-green));
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            z-index: -1;
-        }
-
-        .connection-circle.connected .connection-circle-inner::before {
-            opacity: 1;
-            animation: borderGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes borderGlow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
 
         .connection-icon {
             font-size: 80px;
@@ -666,6 +627,104 @@
             transform: scale(1.05);
         }
 
+        /* Live blink */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        /* Log entry */
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+        }
+
+        .log-entry.log-new {
+            animation: logAppear 0.35s ease forwards;
+        }
+
+        @keyframes logAppear {
+            from { opacity: 0; transform: translateX(-6px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Perspective Grid */
+        .grid-bg {
+            position: fixed;
+            width: 100%;
+            height: 200%;
+            top: -10%;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+            transform: perspective(900px) rotateX(68deg);
+            transform-origin: center 20%;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.055) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.75) 60%, transparent 88%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.75) 60%, transparent 88%);
+        }
+
+        /* Ambient Depth Orbs */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: 0;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        .orb-1 {
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.14) 0%, transparent 70%);
+            top: -220px;
+            left: -220px;
+            animation: orbFloat1 28s ease-in-out infinite;
+        }
+
+        .orb-2 {
+            width: 580px;
+            height: 580px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.11) 0%, transparent 70%);
+            bottom: -160px;
+            right: -160px;
+            animation: orbFloat2 22s ease-in-out infinite;
+        }
+
+        .orb-3 {
+            width: 460px;
+            height: 460px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.09) 0%, transparent 70%);
+            top: 42%;
+            left: 32%;
+            animation: orbFloat3 34s ease-in-out infinite;
+        }
+
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0); }
+            33%  { transform: translate(80px, -60px); }
+            66%  { transform: translate(-40px, 80px); }
+        }
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0); }
+            40%  { transform: translate(-70px, -90px); }
+            70%  { transform: translate(55px, -35px); }
+        }
+        @keyframes orbFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            30%  { transform: translate(-55px, 45px) scale(1.1); }
+            65%  { transform: translate(80px, -50px) scale(0.92); }
+        }
+
+
         /* Responsive */
         @media (max-width: 768px) {
             .header {
@@ -703,7 +762,11 @@
 </head>
 <body>
     <div class="gradient-bg"></div>
-    
+    <div class="grid-bg"></div>
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
     <div class="particles" id="particles"></div>
 
     <div class="container">
@@ -755,6 +818,21 @@
                     <span>⚡</span>
                     <span id="btnText">Connect</span>
                 </button>
+
+                <div id="vpnMeta" style="display:none; margin-top: 28px; gap: 32px; justify-content: center; flex-wrap: wrap;">
+                    <div style="text-align:center;">
+                        <div style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Server</div>
+                        <div id="vpnServer" style="font-size:14px; font-weight:600; font-family:monospace; color:var(--text-primary);">—</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">IP Address</div>
+                        <div id="vpnIP" style="font-size:14px; font-weight:600; font-family:monospace; color:var(--text-primary);">—</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Location</div>
+                        <div id="vpnLocation" style="font-size:14px; font-weight:600; color:var(--text-primary);">—</div>
+                    </div>
+                </div>
             </div>
 
             
@@ -763,6 +841,7 @@
                     <div>
                         <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Guardian Protection</h3>
                         <p style="font-size: 13px; color: var(--text-secondary);">Automatically removes unauthorized devices</p>
+                        <p id="protectedDeviceLine" style="display:none; margin-top: 6px; font-size: 13px; color: var(--accent-green);">🛡️ Protected: <span id="protectedDeviceName"></span></p>
                     </div>
                     <button id="homeGuardianToggle" class="btn" style="padding: 12px 24px; font-size: 14px;">
                         <span id="homeGuardianIcon">🛡️</span>
@@ -771,13 +850,13 @@
                 </div>
             </div>
 
-            <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stats-grid" id="statsGrid" style="margin-top: 48px;">
                 <div class="glass-card stat-card">
                     <div class="stat-header">
                         <div class="stat-icon">🔍</div>
                         <div>
                             <div class="stat-label">Scans</div>
-                            <div class="stat-value">0</div>
+                            <div class="stat-value" id="statScans">0</div>
                         </div>
                     </div>
                 </div>
@@ -786,7 +865,7 @@
                         <div class="stat-icon">🗑️</div>
                         <div>
                             <div class="stat-label">Removed</div>
-                            <div class="stat-value">0</div>
+                            <div class="stat-value" id="statRemoved">0</div>
                         </div>
                     </div>
                 </div>
@@ -795,7 +874,7 @@
                         <div class="stat-icon">📅</div>
                         <div>
                             <div class="stat-label">Expiry</div>
-                            <div class="stat-value">Unknown</div>
+                            <div class="stat-value" id="statExpiry">—</div>
                         </div>
                     </div>
                 </div>
@@ -804,14 +883,27 @@
                         <div class="stat-icon">🛡️</div>
                         <div>
                             <div class="stat-label">Guardian</div>
-                            <div class="stat-value">🔴 Stopped</div>
+                            <div class="stat-value" id="statGuardian">🔴 Stopped</div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="glass-card" style="padding: 28px; margin-top: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                    <h3 style="font-size: 18px; font-weight: 700;">Activity Log</h3>
+                    <span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase;">
+                        <span style="width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; display: inline-block; animation: blink 1.2s ease-in-out infinite;"></span>
+                        Live
+                    </span>
+                </div>
+                <div id="activityLog" style="display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto;">
+                    <p style="color: var(--text-secondary); font-size: 13px; padding: 8px 0;">Waiting for activity...</p>
+                </div>
+            </div>
         </div>
 
-        
+
         <div id="connect" class="page">
             <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 32px;">Select Server</h2>
 
@@ -1079,51 +1171,76 @@
         const connectionSubtitle = document.getElementById('connectionSubtitle');
         const connectionCircle = document.getElementById('connectionCircle');
         const btnText = document.getElementById('btnText');
-        const statsGrid = document.getElementById('statsGrid');
 
-        
+        function formatExpiry(str) {
+            if (!str || str === 'Unknown') return '—';
+            try {
+                const d = new Date(str);
+                if (isNaN(d.getTime())) return str;
+                const days = Math.ceil((d - Date.now()) / 86400000);
+                if (days < 0) return 'Expired';
+                if (days === 0) return 'Expires today';
+                if (days <= 30) return `${days}d left`;
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } catch { return str; }
+        }
+
         function updateUI(status, stats) {
             if (!status) return;
 
             const isConnected = status.state === 'connected';
+            const isConnecting = status.state === 'connecting';
 
+            // Header badge
             if (isConnected) {
                 statusBadge.classList.remove('disconnected');
-                statusText.textContent = 'Connected';
-                connectionTitle.textContent = 'Protected';
-                connectionSubtitle.textContent = status.location || 'Connected';
-                connectionCircle.classList.add('connected');
-                btnText.textContent = 'Disconnect';
-                statsGrid.style.display = 'grid';
+                statusText.textContent = status.location ? `Connected — ${status.location}` : 'Connected';
             } else {
                 statusBadge.classList.add('disconnected');
-                statusText.textContent = status.state === 'connecting' ? 'Connecting...' : 'Disconnected';
-                connectionTitle.textContent = 'Not Protected';
-                connectionSubtitle.textContent = 'Click connect to secure your connection';
-                connectionCircle.classList.remove('connected');
-                btnText.textContent = 'Connect';
-                statsGrid.style.display = 'none';
+                statusText.textContent = isConnecting ? 'Connecting...' : 'Disconnected';
             }
 
-            
-            if (stats) {
-                const statCards = statsGrid.querySelectorAll('.glass-card');
-                if (statCards[0]) {
-                    statCards[0].querySelector('.stat-value').textContent = stats.scan_count || 0;
-                }
-                if (statCards[1]) {
-                    statCards[1].querySelector('.stat-value').textContent = stats.total_removed || 0;
-                }
-                if (statCards[2]) {
-                    statCards[2].querySelector('.stat-value').textContent = stats.expiry || 'Unknown';
-                }
-                if (statCards[3]) {
-                    const guardianStatus = stats.status === 'running' ? '🟢 Active' : '🔴 Stopped';
-                    statCards[3].querySelector('.stat-value').textContent = guardianStatus;
-                }
+            // Connection circle + title
+            connectionCircle.classList.toggle('connected', isConnected);
+            connectionTitle.textContent = isConnected ? 'Protected' : (isConnecting ? 'Connecting…' : 'Not Protected');
+            connectionSubtitle.textContent = isConnected
+                ? (status.server || status.location || 'Secured')
+                : (isConnecting ? 'Establishing secure tunnel…' : 'Click connect to secure your connection');
+            btnText.textContent = isConnected ? 'Disconnect' : (isConnecting ? 'Cancel' : 'Connect');
 
-                
+            // 3D orb color state
+            if (window._orbSetState) {
+                window._orbSetState(isConnected ? 'connected' : isConnecting ? 'connecting' : 'disconnected');
+            }
+
+            // VPN meta row
+            const vpnMeta = document.getElementById('vpnMeta');
+            if (isConnected) {
+                vpnMeta.style.display = 'flex';
+                document.getElementById('vpnServer').textContent = status.server || '—';
+                document.getElementById('vpnIP').textContent = status.ip || '—';
+                document.getElementById('vpnLocation').textContent = status.location || '—';
+            } else {
+                vpnMeta.style.display = 'none';
+            }
+
+            // Stats
+            if (stats) {
+                document.getElementById('statScans').textContent = stats.scan_count ?? 0;
+                document.getElementById('statRemoved').textContent = stats.total_removed ?? 0;
+                document.getElementById('statExpiry').textContent = formatExpiry(stats.expiry);
+                document.getElementById('statGuardian').textContent = stats.status === 'running' ? '🟢 Active' : '🔴 Stopped';
                 updateHomeGuardianButton(stats.status === 'running');
+
+                // Protected device
+                const deviceLine = document.getElementById('protectedDeviceLine');
+                const deviceName = document.getElementById('protectedDeviceName');
+                if (stats.my_device) {
+                    deviceName.textContent = stats.my_device;
+                    deviceLine.style.display = 'block';
+                } else {
+                    deviceLine.style.display = 'none';
+                }
             }
         }
 
@@ -1200,16 +1317,93 @@
             }, 2000);
         });
 
-        
         async function refresh() {
-            const status = await fetchStatus();
-            const stats = await fetchStats();
+            const [status, stats] = await Promise.all([fetchStatus(), fetchStats()]);
             updateUI(status, stats);
 
-            
-            const devicesPage = document.getElementById('devices');
-            if (devicesPage.classList.contains('active')) {
-                await updateDevicesList();
+            const activePage = document.querySelector('.page.active');
+            if (!activePage) return;
+
+            switch (activePage.id) {
+                case 'home':
+                    updateActivityLog(stats);
+                    break;
+                case 'devices':
+                    await updateDevicesList();
+                    break;
+                case 'whitelist':
+                    await updateWhitelistPage();
+                    break;
+                case 'settings':
+                    updateSettingsGuardianBtn(stats);
+                    break;
+            }
+        }
+
+        const _seenLogKeys = new Set();
+
+        function _logKey(l) { return `${l.time}|${l.level}|${l.message}`; }
+
+        function updateActivityLog(stats) {
+            const container = document.getElementById('activityLog');
+            if (!container || !stats || !stats.logs) return;
+
+            const logs = stats.logs;
+
+            if (logs.length === 0) {
+                if (!container.querySelector('p')) {
+                    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 13px; padding: 8px 0;">Waiting for activity...</p>';
+                    _seenLogKeys.clear();
+                }
+                return;
+            }
+
+            // Clear placeholder
+            const placeholder = container.querySelector('p');
+            if (placeholder) { container.innerHTML = ''; _seenLogKeys.clear(); }
+
+            // Only process entries the DOM hasn't seen yet
+            const fresh = logs.filter(l => !_seenLogKeys.has(_logKey(l)));
+            if (fresh.length === 0) return;
+            fresh.forEach(l => _seenLogKeys.add(_logKey(l)));
+
+            const levelColor  = { ERROR: 'var(--accent-red)', WARNING: '#fbbf24', INFO: 'var(--text-secondary)' };
+            const levelBorder = { ERROR: 'var(--accent-red)', WARNING: '#fbbf24', INFO: 'rgba(255,255,255,0.08)' };
+
+            // Build fragment newest-first, then prepend in one operation
+            const frag = document.createDocumentFragment();
+            for (const log of [...fresh].reverse()) {
+                const color  = levelColor[log.level]  || 'var(--text-secondary)';
+                const border = levelBorder[log.level] || 'rgba(255,255,255,0.08)';
+                const el = document.createElement('div');
+                el.className = 'log-entry log-new';
+                el.style.borderLeft = `2px solid ${border}`;
+                el.innerHTML =
+                    `<span style="font-size:11px;color:rgba(255,255,255,0.3);min-width:58px;flex-shrink:0;">${log.time}</span>` +
+                    `<span style="font-size:13px;color:${color};line-height:1.4;">${log.message}</span>`;
+                // Remove animation class after it finishes so it doesn't replay
+                el.addEventListener('animationend', () => el.classList.remove('log-new'), { once: true });
+                frag.appendChild(el);
+            }
+            container.insertBefore(frag, container.firstChild);
+
+            // Keep at most 60 entries visible
+            while (container.children.length > 60) container.removeChild(container.lastChild);
+
+            // Guard against unbounded growth after many server restarts
+            if (_seenLogKeys.size > 800) _seenLogKeys.clear();
+        }
+
+        function updateSettingsGuardianBtn(stats) {
+            if (!stats) return;
+            const btn = document.getElementById('guardianToggleBtn');
+            if (!btn) return;
+            if (stats.status === 'running') {
+                btn.textContent = 'Stop Guardian';
+                btn.style.background = 'var(--accent-red)';
+            } else {
+                btn.textContent = 'Start Guardian';
+                btn.style.background = 'var(--accent-green)';
             }
         }
 
@@ -1220,20 +1414,28 @@
         startGuardian();
 
         
-        setInterval(refresh, 3000);
+        setInterval(refresh, 2000);
 
         
         navBtns.forEach(btn => {
             const originalClick = btn.onclick;
             btn.addEventListener('click', async () => {
                 if (btn.dataset.page === 'devices') {
+                    stopAutoPing();
                     await updateDevicesList();
                 } else if (btn.dataset.page === 'whitelist') {
+                    stopAutoPing();
                     await updateWhitelistPage();
                 } else if (btn.dataset.page === 'connect') {
                     await loadServers();
+                    startAutoPing();
                 } else if (btn.dataset.page === 'settings') {
+                    stopAutoPing();
                     await loadSettings();
+                } else {
+                    stopAutoPing();
+                    const stats = await fetchStats();
+                    updateActivityLog(stats);
                 }
             });
         });
@@ -1399,7 +1601,10 @@
                                 <p>${country.city_count} cities • ${country.servers.length} servers</p>
                             </div>
                         </div>
-                        <button class="server-connect-btn" onclick="event.stopPropagation(); connectToCountry('${country.code}')">Connect</button>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span id="country-ping-${country.code}" style="font-size: 13px; color: var(--text-secondary); min-width: 100px; text-align: right;">—</span>
+                            <button class="server-connect-btn" onclick="event.stopPropagation(); connectToCountry('${country.code}')">Connect</button>
+                        </div>
                     </div>
                     <div class="country-servers" id="servers-${country.code}">
                         ${country.servers.map(server => `
@@ -1409,7 +1614,7 @@
                                     <div style="font-size: 11px; color: var(--text-secondary);">${server.city} • ${server.ipv4}</div>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <span id="ping-${server.hostname}" style="font-size: 12px; color: var(--text-secondary); min-width: 50px;">—</span>
+                                    <span id="ping-${server.hostname}" style="font-size: 12px; color: var(--text-secondary); min-width: 60px; text-align: right;">—</span>
                                     <button class="server-connect-btn" onclick="connectToServer('${server.hostname}')">Connect</button>
                                 </div>
                             </div>
@@ -1491,78 +1696,109 @@
 
         
         let isPinging = false;
+        let autoPingInterval = null;
+        let serverPings = {};
 
-        async function pingServer(hostname, ipv4) {
-            const startTime = performance.now();
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                await fetch(`http://${ipv4}:80`, {
-                    method: 'HEAD',
-                    mode: 'no-cors',
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-                const endTime = performance.now();
-                return Math.round(endTime - startTime);
-            } catch (error) {
-                const endTime = performance.now();
-                const elapsed = Math.round(endTime - startTime);
-                return elapsed < 5000 ? elapsed : null;
+        function applyPingColor(el, ping) {
+            if (ping === null || ping === undefined) {
+                el.textContent = 'timeout';
+                el.style.color = 'rgba(255,255,255,0.2)';
+            } else {
+                el.textContent = `${Math.round(ping)}ms`;
+                el.style.color = ping < 50  ? 'var(--accent-green)' :
+                                 ping < 100 ? 'var(--accent-primary)' :
+                                 ping < 200 ? '#fbbf24' :
+                                              'var(--accent-red)';
             }
         }
 
-        async function pingAllServers() {
+        async function pingAllServers(silent = false) {
             if (isPinging) return;
-
             isPinging = true;
+
             const pingBtn = document.getElementById('pingAllBtn');
-            pingBtn.textContent = '⏳ Pinging...';
-            pingBtn.disabled = true;
-
-            
-            const allServers = [];
-            allCountries.forEach(country => {
-                country.servers.forEach(server => {
-                    allServers.push(server);
-                });
-            });
-
-            
-            const batchSize = 10;
-            for (let i = 0; i < allServers.length; i += batchSize) {
-                const batch = allServers.slice(i, i + batchSize);
-                await Promise.all(batch.map(async (server) => {
-                    const ping = await pingServer(server.hostname, server.ipv4);
-                    const pingElement = document.getElementById(`ping-${server.hostname}`);
-                    if (pingElement) {
-                        if (ping !== null) {
-                            pingElement.textContent = `${ping}ms`;
-                            pingElement.style.color = ping < 50 ? 'var(--accent-green)' :
-                                                      ping < 100 ? 'var(--accent-primary)' :
-                                                      'var(--accent-red)';
-                        } else {
-                            pingElement.textContent = 'timeout';
-                            pingElement.style.color = 'var(--accent-red)';
-                        }
-                    }
-                }));
-
-                
-                const progress = Math.round((i + batchSize) / allServers.length * 100);
-                pingBtn.textContent = `⏳ Pinging... ${Math.min(progress, 100)}%`;
+            if (!silent) {
+                pingBtn.textContent = '⏳ Pinging...';
+                pingBtn.disabled = true;
             }
 
-            pingBtn.textContent = '📡 Ping All Servers';
-            pingBtn.disabled = false;
+            const servers = [];
+            allCountries.forEach(c => c.servers.forEach(s => servers.push({ hostname: s.hostname, ip: s.ipv4 })));
+
+            try {
+                const res = await fetch('/api/ping-batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ servers }),
+                });
+                const data = await res.json();
+                serverPings = {};
+
+                Object.entries(data.results || {}).forEach(([hostname, ping]) => {
+                    serverPings[hostname] = ping;
+                    const el = document.getElementById(`ping-${hostname}`);
+                    if (el) applyPingColor(el, ping);
+                });
+
+                updateCountryPings();
+            } catch (e) {
+                console.error('Ping batch failed:', e);
+            }
+
+            if (!silent) {
+                pingBtn.textContent = '📡 Ping All Servers';
+                pingBtn.disabled = false;
+            }
             isPinging = false;
         }
 
-        document.getElementById('pingAllBtn').addEventListener('click', pingAllServers);
+        function updateCountryPings() {
+            allCountries.forEach(country => {
+                let lowestPing = null;
+                let lowestServer = null;
 
-        
+                country.servers.forEach(server => {
+                    const ping = serverPings[server.hostname];
+                    if (ping !== null && ping !== undefined) {
+                        if (lowestPing === null || ping < lowestPing) {
+                            lowestPing = ping;
+                            lowestServer = server;
+                        }
+                    }
+                });
+
+                const countryPingElement = document.getElementById(`country-ping-${country.code}`);
+                if (countryPingElement && lowestPing !== null) {
+                    const color = lowestPing < 50  ? 'var(--accent-green)' :
+                                  lowestPing < 100 ? 'var(--accent-primary)' :
+                                  lowestPing < 200 ? '#fbbf24' :
+                                                     'var(--accent-red)';
+                    countryPingElement.innerHTML = `<span style="color:${color}; font-weight:600;">${Math.round(lowestPing)}ms</span> <span style="color:rgba(255,255,255,0.3); font-size:11px;">${lowestServer.city}</span>`;
+                }
+            });
+        }
+
+        function startAutoPing() {
+            if (autoPingInterval) {
+                clearInterval(autoPingInterval);
+            }
+
+            pingAllServers(true);
+
+            autoPingInterval = setInterval(() => {
+                pingAllServers(true);
+            }, 3000);
+        }
+
+        function stopAutoPing() {
+            if (autoPingInterval) {
+                clearInterval(autoPingInterval);
+                autoPingInterval = null;
+            }
+        }
+
+        document.getElementById('pingAllBtn').addEventListener('click', () => pingAllServers(false));
+
         window.toggleCountry = toggleCountry;
         window.connectToServer = connectToServer;
         window.connectToCountry = connectToCountry;
@@ -1701,6 +1937,201 @@
                 console.error('Failed to set ad blocking:', error);
             }
         });
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <script>
+    // Three.js Guardian Orb — real WebGL 3D sphere replacing the flat circle
+    (function initGuardianOrb() {
+        const container = document.getElementById('connectionCircle');
+        if (!container || !window.THREE) return;
+
+        container.innerHTML = '';
+        container.style.animation = 'none';
+
+        const SIZE = 240;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+        camera.position.z = 4.8;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(SIZE, SIZE);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0);
+        container.appendChild(renderer.domElement);
+        renderer.domElement.style.cssText = 'border-radius:50%; display:block;';
+
+        // Solid dark core
+        const coreMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.92, 48, 48),
+            new THREE.MeshPhongMaterial({
+                color: 0x05050f,
+                shininess: 100,
+                specular: new THREE.Color(0x6366f1),
+                transparent: true, opacity: 0.97,
+            })
+        );
+        scene.add(coreMesh);
+
+        // Wireframe shell — the main 3D look
+        const wireMat = new THREE.MeshBasicMaterial({
+            color: 0x6366f1, wireframe: true, transparent: true, opacity: 0.5,
+        });
+        const wireMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 22, 22), wireMat);
+        scene.add(wireMesh);
+
+        // Second finer wireframe at slight offset for depth
+        const wire2Mat = new THREE.MeshBasicMaterial({
+            color: 0x8b5cf6, wireframe: true, transparent: true, opacity: 0.2,
+        });
+        const wire2Mesh = new THREE.Mesh(new THREE.SphereGeometry(0.97, 14, 14), wire2Mat);
+        wire2Mesh.rotation.y = Math.PI / 4;
+        wire2Mesh.rotation.x = Math.PI / 6;
+        scene.add(wire2Mesh);
+
+        // Atmospheric glow — custom GLSL shader, the signature "3D orb" look from 21st.dev
+        const atmMat = new THREE.ShaderMaterial({
+            uniforms: { glowColor: { value: new THREE.Color(0x6366f1) } },
+            vertexShader: `
+                varying vec3 vNormal;
+                void main() {
+                    vNormal = normalize(normalMatrix * normal);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 glowColor;
+                varying vec3 vNormal;
+                void main() {
+                    float i = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.6);
+                    gl_FragColor = vec4(glowColor, 1.0) * i;
+                }
+            `,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide,
+            transparent: true,
+        });
+        const atmMesh = new THREE.Mesh(new THREE.SphereGeometry(1.28, 32, 32), atmMat);
+        scene.add(atmMesh);
+
+        // Outer halo ring — thinner glow further out
+        const haloMat = new THREE.ShaderMaterial({
+            uniforms: { glowColor: { value: new THREE.Color(0x6366f1) } },
+            vertexShader: `
+                varying vec3 vNormal;
+                void main() {
+                    vNormal = normalize(normalMatrix * normal);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 glowColor;
+                varying vec3 vNormal;
+                void main() {
+                    float i = pow(0.55 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.5) * 0.5;
+                    gl_FragColor = vec4(glowColor, 1.0) * i;
+                }
+            `,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide,
+            transparent: true,
+        });
+        const haloMesh = new THREE.Mesh(new THREE.SphereGeometry(1.55, 32, 32), haloMat);
+        scene.add(haloMesh);
+
+        // Orbiting particle ring — data flow effect
+        function makeRing(radius, count, tiltX, tiltZ) {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                const a = (i / count) * Math.PI * 2;
+                pos[i * 3]     = Math.cos(a) * radius;
+                pos[i * 3 + 1] = 0;
+                pos[i * 3 + 2] = Math.sin(a) * radius;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const mesh = new THREE.Points(geo, new THREE.PointsMaterial({
+                color: 0x6366f1, size: 0.035, transparent: true, opacity: 0.8, sizeAttenuation: true,
+            }));
+            mesh.rotation.x = tiltX;
+            mesh.rotation.z = tiltZ;
+            return mesh;
+        }
+
+        const ring1 = makeRing(1.42, 140, Math.PI / 2.5, 0);
+        const ring2 = makeRing(1.38, 100, -Math.PI / 3.5, Math.PI / 5);
+        const ring3 = makeRing(1.35, 80, Math.PI / 7, -Math.PI / 4);
+        scene.add(ring1); scene.add(ring2); scene.add(ring3);
+
+        // Lights
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.15);
+        scene.add(ambLight);
+        const pLight = new THREE.PointLight(0x6366f1, 4, 12);
+        pLight.position.set(2.5, 2, 3);
+        scene.add(pLight);
+        const pLight2 = new THREE.PointLight(0x8b5cf6, 2, 10);
+        pLight2.position.set(-2, -1.5, 2);
+        scene.add(pLight2);
+
+        // State colors
+        const COLORS = {
+            disconnected: new THREE.Color(0x6366f1),
+            connecting:   new THREE.Color(0xfbbf24),
+            connected:    new THREE.Color(0x10b981),
+        };
+        let targetColor = COLORS.disconnected.clone();
+        let currentColor = COLORS.disconnected.clone();
+
+        window._orbSetState = (state) => {
+            targetColor.copy(COLORS[state] || COLORS.disconnected);
+        };
+
+        // Handle responsive resize
+        const mediaQuery = window.matchMedia('(max-width: 768px)');
+        function handleResize() {
+            const s = mediaQuery.matches ? 180 : 240;
+            renderer.setSize(s, s);
+            container.style.width = s + 'px';
+            container.style.height = s + 'px';
+        }
+        mediaQuery.addEventListener('change', handleResize);
+
+        let t = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            t += 0.008;
+
+            wireMesh.rotation.y  += 0.0045;
+            wireMesh.rotation.x  += 0.0012;
+            wire2Mesh.rotation.y -= 0.003;
+            wire2Mesh.rotation.z += 0.001;
+            coreMesh.rotation.y  += 0.002;
+            atmMesh.rotation.y   += 0.001;
+            ring1.rotation.y     += 0.014;
+            ring2.rotation.y     -= 0.010;
+            ring3.rotation.y     += 0.007;
+
+            // Pulsing atmosphere
+            const pulse = 0.92 + 0.08 * Math.sin(t * 1.4);
+            atmMesh.scale.setScalar(pulse);
+            haloMesh.scale.setScalar(0.96 + 0.06 * Math.sin(t * 1.1 + 1));
+
+            // Smooth color transition
+            currentColor.lerp(targetColor, 0.03);
+            wireMat.color.copy(currentColor);
+            wire2Mat.color.copy(currentColor);
+            atmMat.uniforms.glowColor.value.copy(currentColor);
+            haloMat.uniforms.glowColor.value.copy(currentColor);
+            pLight.color.copy(currentColor);
+            ring1.material.color.copy(currentColor);
+            ring2.material.color.copy(currentColor);
+            ring3.material.color.copy(currentColor);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    })();
     </script>
 </body>
 </html>
