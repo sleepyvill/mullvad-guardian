@@ -153,7 +153,10 @@ class MullvadCLI:
             res["state"] = "unavailable"
             return res
         text = out.strip()
-        if "Connected" in text:
+        low = text.lower()
+        if "inactive" in low:
+            res["state"] = "inactive"
+        elif "Connected" in text:
             res["state"] = "connected"
             m = re.search(r'(\d+\.\d+\.\d+\.\d+)', text)
             if m: res["ip"] = m.group(1)
@@ -231,18 +234,19 @@ class MullvadCLI:
     @classmethod
     def is_device_valid(cls) -> bool:
         out, _, rc = cls._run("account", "get")
-        if rc == 0:
-            if "revoked" in out.lower():
-                return False
-            if "mullvad account:" in out.lower() and "not logged in" not in out.lower():
-                return True
-        return False
+        text = out.lower()
+        if rc != 0:
+            return False
+        if any(s in text for s in ("not logged in", "revoked", "inactive")):
+            return False
+        return "mullvad account:" in text
 
     @classmethod
     def is_logged_in(cls) -> bool:
         out, err, rc = cls._run("account", "get")
+        text = out.lower()
 
-        if rc == 0 and "not logged in" not in out.lower():
+        if rc == 0 and not any(s in text for s in ("not logged in", "revoked", "inactive")):
             return True
 
         return False
@@ -274,7 +278,14 @@ class MullvadCLI:
 
     @classmethod
     def relogin(cls, account_num: str) -> bool:
+        state = cls.status().get("state", "unknown")
+        out, _, _ = cls._run("account", "get")
+        account_state = out.lower()
+        if state in ("connected", "connecting", "blocked", "inactive", "unknown") or any(s in account_state for s in ("revoked", "inactive")):
+            cls.disconnect()
+            time.sleep(2)
         cls._run("account", "logout")
+        time.sleep(1)
         _, _, rc = cls._run("account", "login", account_num, timeout=15)
         return rc == 0
 
@@ -300,8 +311,6 @@ class VPNStatusWorker(QThread):
                 self._check_count = 0
                 if not MullvadCLI.is_logged_in():
                     self.logged_out.emit()
-                    if self._account_num and MullvadCLI.relogin(self._account_num):
-                        pass
 
             self.status_changed.emit(MullvadCLI.status())
             for _ in range(25):
@@ -623,6 +632,35 @@ class GuardianWorker(QThread):
             return self._login()
         return True
 
+    def _check_login_status(self) -> None:
+        if not MullvadCLI.available():
+            return
+        if MullvadCLI.is_device_valid():
+            return
+        state = MullvadCLI.status().get("state", "unknown")
+        if state in ("connected", "connecting", "blocked", "inactive", "unknown"):
+            self._log.info("Disconnecting inactive VPN session…")
+            MullvadCLI.disconnect()
+            time.sleep(2)
+
+        if not (self._auto_reconnect or self._persistent_connect):
+            return
+
+        self._log.warning("Mullvad device is not valid — re-logging in…")
+        if MullvadCLI.relogin(self._account_num):
+            self._log.info("Re-login successful.")
+            self._self_detected = False
+            self._my_device = None
+            self._auto_whitelist = set()
+            self._session_active = False
+            if self._auto_reconnect or self._persistent_connect:
+                if MullvadCLI.connect():
+                    self._log.info("Reconnected after re-login.")
+                else:
+                    self._log.warning("Reconnect after re-login failed — will retry.")
+        else:
+            self._log.error("Re-login failed.")
+
     def _ensure_connected(self) -> None:
         if not self._persistent_connect or not MullvadCLI.available():
             return
@@ -637,8 +675,6 @@ class GuardianWorker(QThread):
 
         if not MullvadCLI.is_device_valid():
             self._log.info("Not logged in — logging in…")
-            MullvadCLI._run("account", "logout")
-            time.sleep(1)
             if not MullvadCLI.relogin(self._account_num):
                 self._log.error("Login failed.")
                 return
@@ -765,6 +801,7 @@ class GuardianWorker(QThread):
         self._log.info("Guardian active — monitoring devices…")
 
         while self._active:
+            self._check_login_status()
             self._ensure_connected()
 
             if not self._ensure_session():
@@ -815,14 +852,11 @@ class GuardianWorker(QThread):
                                     self._log.warning("Connection failed — will retry next cycle.")
                     elif self._auto_reconnect and MullvadCLI.available():
                         reconnected = False
-
-                        self._log.info("Disconnecting VPN to allow login…")
-                        MullvadCLI.disconnect()
-                        time.sleep(2)
-
-                        self._log.info("Device removed — forcing logout to clear revoked device…")
-                        MullvadCLI._run("account", "logout")
-                        time.sleep(1)
+                        state = MullvadCLI.status().get("state", "unknown")
+                        if state in ("connected", "connecting", "blocked", "inactive", "unknown"):
+                            self._log.info("Disconnecting VPN to allow login…")
+                            MullvadCLI.disconnect()
+                            time.sleep(2)
 
                         self._log.info("Logging in to create new device…")
                         if MullvadCLI.relogin(self._account_num):
@@ -845,6 +879,12 @@ class GuardianWorker(QThread):
                         self._my_device      = None
                         self._auto_whitelist = set()
                     else:
+                        if MullvadCLI.available():
+                            state = MullvadCLI.status().get("state", "unknown")
+                            if state in ("connected", "connecting", "blocked", "inactive", "unknown"):
+                                self._log.info("Disconnecting inactive VPN session.")
+                                MullvadCLI.disconnect()
+                                time.sleep(2)
                         self._self_detected  = False
                         self._my_device      = None
                         self._auto_whitelist = set()
@@ -2618,6 +2658,7 @@ class ConnectPage(QWidget):
             "disconnected": "Disconnected",
             "connecting":   "Connecting…",
             "blocked":      "Kill Switch Active",
+            "inactive":     "Device inactive",
             "unavailable":  "mullvad CLI not found",
             "unknown":      "Unknown",
         }
@@ -3623,6 +3664,7 @@ class ConnectPage(QWidget):
             "disconnected": "Disconnected",
             "connecting":   "Connecting…",
             "blocked":      "Kill Switch Active",
+            "inactive":     "Device inactive",
             "unavailable":  "mullvad CLI not found",
             "unknown":      "Unknown",
         }

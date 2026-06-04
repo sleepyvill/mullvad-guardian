@@ -149,7 +149,10 @@ class MullvadCLI:
             res["state"] = "unavailable"
             return res
         text = out.strip()
-        if "Connected" in text:
+        low = text.lower()
+        if "inactive" in low:
+            res["state"] = "inactive"
+        elif "Connected" in text:
             res["state"] = "connected"
             m = re.search(r"(\d+\.\d+\.\d+\.\d+)", text)
             if m:
@@ -182,12 +185,19 @@ class MullvadCLI:
     @classmethod
     def is_logged_in(cls):
         out, err, rc = cls._run("account", "get")
-        if rc == 0 and "not logged in" not in out.lower():
+        text = out.lower()
+        if rc == 0 and not any(s in text for s in ("not logged in", "revoked", "inactive")):
             return True
         return False
 
     @classmethod
     def relogin(cls, account_num):
+        state = cls.status().get("state", "unknown")
+        out, _, _ = cls._run("account", "get")
+        account_state = out.lower()
+        if state in ("connected", "connecting", "blocked", "inactive", "unknown") or any(s in account_state for s in ("revoked", "inactive")):
+            cls.disconnect()
+            time.sleep(2)
         cls._run("account", "logout")
         time.sleep(1)
         _, _, rc = cls._run("account", "login", account_num, timeout=15)
@@ -215,7 +225,12 @@ class MullvadCLI:
     @classmethod
     def is_device_valid(cls):
         out, err, rc = cls._run("account", "get")
-        return rc == 0 and "device" in out.lower()
+        text = out.lower()
+        if rc != 0:
+            return False
+        if any(s in text for s in ("not logged in", "revoked", "inactive")):
+            return False
+        return "device" in text
 
     @classmethod
     def set_relay(cls, hostname):
@@ -311,6 +326,12 @@ class GuardianWorker(threading.Thread):
     def update_webhook(self, url):
         self._discord = url
 
+    def update_auto_reconnect(self, enabled):
+        self._auto_reconnect = bool(enabled)
+
+    def update_persistent_connect(self, enabled):
+        self._persistent_connect = bool(enabled)
+
     def get_stats(self):
         with self._lock:
             logs = list(self._logs[-50:])
@@ -384,16 +405,25 @@ class GuardianWorker(threading.Thread):
     def _check_login_status(self):
         if not MullvadCLI.available():
             return
-        if MullvadCLI.is_logged_in():
+        if MullvadCLI.is_device_valid():
             return
-        self._log("WARNING", "Not logged in to Mullvad — re-logging in...")
+        state = MullvadCLI.status().get("state", "unknown")
+        if state in ("connected", "connecting", "blocked", "inactive", "unknown"):
+            self._log("INFO", "Disconnecting inactive VPN session...")
+            MullvadCLI.disconnect()
+            time.sleep(2)
+
+        if not (self._auto_reconnect or self._persistent_connect):
+            return
+
+        self._log("WARNING", "Mullvad device is not valid — re-logging in...")
         if MullvadCLI.relogin(self._account_num):
             self._log("INFO", "Re-login successful.")
             self._self_detected = False
             self._my_device = None
             self._auto_whitelist = set()
             self._session_active = False
-            if self._persistent_connect:
+            if self._auto_reconnect or self._persistent_connect:
                 if MullvadCLI.connect():
                     self._log("INFO", "Reconnected after re-login.")
                 else:
@@ -415,8 +445,6 @@ class GuardianWorker(threading.Thread):
 
         if not MullvadCLI.is_device_valid():
             self._log("INFO", "Not logged in - logging in...")
-            MullvadCLI._run("account", "logout")
-            time.sleep(1)
             if not MullvadCLI.relogin(self._account_num):
                 self._log("ERROR", "Login failed")
                 return
@@ -563,16 +591,15 @@ class GuardianWorker(threading.Thread):
             if self._my_device:
                 names_lower = {d.name.lower().strip() for d in devices}
                 if self._my_device.lower().strip() not in names_lower:
-                    self._log("WARNING", f"Own device '{self._my_device}' was removed — re-logging in...")
+                    self._log("WARNING", f"Own device '{self._my_device}' was removed — checking current state...")
 
-                    # Check if user already logged in manually under a new device name.
                     current_device = MullvadCLI.detect_my_device()
                     if current_device and current_device.lower().strip() in names_lower:
                         self._log("INFO", f"Already logged in as '{current_device}' — adopting as protected device.")
                         self._my_device = current_device
                         self._self_detected = True
                         self._auto_whitelist = {current_device.lower().strip()}
-                        if self._persistent_connect:
+                        if self._auto_reconnect:
                             state = MullvadCLI.status().get("state", "disconnected")
                             if state not in ("connected", "connecting"):
                                 self._log("INFO", "Connecting VPN for adopted device...")
@@ -580,21 +607,23 @@ class GuardianWorker(threading.Thread):
                                     self._log("INFO", "Connected successfully.")
                                 else:
                                     self._log("WARNING", "Connection failed — will retry next cycle.")
-                    elif MullvadCLI.available():
-                        if self._persistent_connect:
+                    elif self._auto_reconnect and MullvadCLI.available():
+                        state = MullvadCLI.status().get("state", "unknown")
+                        if state in ("connected", "connecting", "blocked", "inactive", "unknown"):
+                            self._log("INFO", "Disconnecting VPN to allow login...")
                             MullvadCLI.disconnect()
                             time.sleep(2)
+
                         MullvadCLI._run("account", "logout")
                         time.sleep(1)
 
                         self._log("INFO", "Logging in to create new device...")
                         if MullvadCLI.relogin(self._account_num):
                             self._log("INFO", "Re-login successful.")
-                            if self._persistent_connect:
-                                if MullvadCLI.connect():
-                                    self._log("INFO", "Connection successful.")
-                                else:
-                                    self._log("WARNING", "Connection failed — will retry next cycle.")
+                            if MullvadCLI.connect():
+                                self._log("INFO", "Connection successful.")
+                            else:
+                                self._log("WARNING", "Connection failed — will retry next cycle.")
                         else:
                             self._log("ERROR", "Re-login failed — will retry next cycle.")
 
@@ -602,6 +631,12 @@ class GuardianWorker(threading.Thread):
                         self._my_device = None
                         self._auto_whitelist = set()
                     else:
+                        if MullvadCLI.available():
+                            state = MullvadCLI.status().get("state", "unknown")
+                            if state in ("connected", "connecting", "blocked", "inactive", "unknown"):
+                                self._log("INFO", "Disconnecting inactive VPN session.")
+                                MullvadCLI.disconnect()
+                                time.sleep(2)
                         self._self_detected = False
                         self._my_device = None
                         self._auto_whitelist = set()
@@ -802,6 +837,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             data = {}
 
         if path == "/api/connect":
+            config = load_config()
+            if config.get("account_num") and not MullvadCLI.is_device_valid():
+                if not MullvadCLI.relogin(config.get("account_num", "")):
+                    self._send_json({"success": False, "message": "Login failed"})
+                    return
             success = MullvadCLI.connect()
             self._send_json({"success": success})
 
@@ -818,6 +858,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 _guardian_worker.update_whitelist(config.get("whitelist", []))
                 _guardian_worker.update_interval(config.get("check_interval", 3))
                 _guardian_worker.update_webhook(config.get("discord_webhook", ""))
+                _guardian_worker.update_auto_reconnect(config.get("auto_reconnect", True))
+                _guardian_worker.update_persistent_connect(config.get("persistent_connect", True))
 
             self._send_json({"success": True})
 

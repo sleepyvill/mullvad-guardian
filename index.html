@@ -1190,6 +1190,7 @@
 
             const isConnected = status.state === 'connected';
             const isConnecting = status.state === 'connecting';
+            const isInactive = status.state === 'inactive';
 
             // Header badge
             if (isConnected) {
@@ -1197,16 +1198,16 @@
                 statusText.textContent = status.location ? `Connected — ${status.location}` : 'Connected';
             } else {
                 statusBadge.classList.add('disconnected');
-                statusText.textContent = isConnecting ? 'Connecting...' : 'Disconnected';
+                statusText.textContent = isInactive ? 'Device inactive' : (isConnecting ? 'Connecting...' : 'Disconnected');
             }
 
             // Connection circle + title
             connectionCircle.classList.toggle('connected', isConnected);
-            connectionTitle.textContent = isConnected ? 'Protected' : (isConnecting ? 'Connecting…' : 'Not Protected');
+            connectionTitle.textContent = isConnected ? 'Protected' : (isInactive ? 'Device inactive' : (isConnecting ? 'Connecting…' : 'Not Protected'));
             connectionSubtitle.textContent = isConnected
                 ? (status.server || status.location || 'Secured')
-                : (isConnecting ? 'Establishing secure tunnel…' : 'Click connect to secure your connection');
-            btnText.textContent = isConnected ? 'Disconnect' : (isConnecting ? 'Cancel' : 'Connect');
+                : (isInactive ? 'Log in again to register this device' : (isConnecting ? 'Establishing secure tunnel…' : 'Click connect to secure your connection'));
+            btnText.textContent = isConnected ? 'Disconnect' : (isInactive ? 'Login & Connect' : (isConnecting ? 'Cancel' : 'Connect'));
 
             // 3D orb color state
             if (window._orbSetState) {
@@ -1935,6 +1936,30 @@
                 });
             } catch (error) {
                 console.error('Failed to set ad blocking:', error);
+            }
+        });
+
+        document.getElementById('autoreconnectToggle').addEventListener('change', async (e) => {
+            try {
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ auto_reconnect: e.target.checked })
+                });
+            } catch (error) {
+                console.error('Failed to set auto-reconnect:', error);
+            }
+        });
+
+        document.getElementById('persistentToggle').addEventListener('change', async (e) => {
+            try {
+                await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ persistent_connect: e.target.checked })
+                });
+            } catch (error) {
+                console.error('Failed to set persistent connect:', error);
             }
         });
 
